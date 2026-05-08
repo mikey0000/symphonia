@@ -18,7 +18,8 @@
       "defaults": true,
       "additional": [
         "aarch64-apple-darwin",
-        "i686-pc-windows-msvc"
+        "i686-pc-windows-msvc",
+        "x86_64-unknown-linux-musl"
       ]
     }
   },
@@ -71,5 +72,13 @@
     "singleQuote": true,
     "arrowParens": "always"
   },
-  "packageManager": "yarn@3.2.3"
+  "volta": {
+    "node": "24.11.0",
+    "pnpm": "11.0.8"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@swc/core"
+    ]
+  }
 }

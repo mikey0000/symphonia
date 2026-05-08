@@ -9,19 +9,14 @@ on:
   pull_request:
 
 jobs:
+  env:
+    VOLTA_FEATURE_PNPM: 1
   lint:
     name: Lint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-
-      - name: Setup node
-        uses: actions/setup-node@v3
-        with:
-          node-version: 16
-          cache: 'yarn'
-          check-latest: true
-
+      - uses: volta-cli/action@v4
       - name: Install
         uses: actions-rs/toolchain@v1
         with:
@@ -37,10 +32,10 @@ jobs:
           key: npm-cache-lint-node@16
 
       - name: 'Install dependencies'
-        run: yarn install --frozen-lockfile --registry https://registry.npmjs.org --network-timeout 300000 && sudo apt-get update && sudo apt-get install --no-install-recommends libasound2-dev pkg-config -y
+        run: pnpm install --frozen-lockfile --registry https://registry.npmjs.org --network-timeout 300000 && sudo apt-get update && sudo apt-get install --no-install-recommends libasound2-dev pkg-config -y
 
       - name: ESLint
-        run: yarn lint
+        run: pnpm lint
 
       - name: Cargo fmt
         run: cargo fmt -- --check
