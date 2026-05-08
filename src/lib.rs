@@ -5,7 +5,7 @@ use napi::{
   bindgen_prelude::{Buffer, ClassInstance, Error, Status},
   Env, Result,
 };
-use rodio::{source::SineWave, Decoder, FromSample, OutputStream, Sample, Sink, Source};
+use rodio::{cpal::FromSample, source::SineWave, Decoder, OutputStream, Sample, Sink, Source};
 use std::{io::Cursor, time::Duration};
 
 #[macro_use]
