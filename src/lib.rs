@@ -5,7 +5,7 @@ use napi::{
   bindgen_prelude::{Buffer, ClassInstance, Error, Status},
   Env, Result,
 };
-use rodio::{source::SineWave, Decoder, OutputStream, Sample, Sink, Source};
+use rodio::{source::SineWave, Decoder, FromSample, OutputStream, Sample, Sink, Source};
 use std::{io::Cursor, time::Duration};
 
 #[macro_use]
@@ -120,6 +120,7 @@ fn handler<S>(source: S, opt: Option<Options>, env: Env) -> Result<Data>
 where
   S: Source + Send + 'static,
   S::Item: Sample + Send,
+  f32: FromSample<S::Item>,
 {
   let is_blocking = if let Some(opt) = &opt {
     opt.is_blocking.unwrap_or(true)
@@ -166,6 +167,7 @@ fn play_blocking<S>(source: S, opt: Option<Options>) -> Result<()>
 where
   S: Source + Send + 'static,
   S::Item: Sample + Send,
+  f32: FromSample<S::Item>,
 {
   let (_stream, stream_handle) =
     OutputStream::try_default().map_err(|e| Error::new(Status::GenericFailure, e.to_string()))?;
@@ -189,6 +191,7 @@ fn play<S>(source: S, opt: Option<Options>, rx: Receiver<ControllerMessages>) ->
 where
   S: Source + Send + 'static,
   S::Item: Sample + Send,
+  f32: FromSample<S::Item>,
 {
   let (_stream, stream_handle) =
     OutputStream::try_default().map_err(|e| Error::new(Status::GenericFailure, e.to_string()))?;
