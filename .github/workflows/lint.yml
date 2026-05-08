@@ -17,13 +17,6 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: volta-cli/action@v4
-      - name: Setup node
-        uses: actions/setup-node@v3
-        with:
-          node-version: 16
-          cache: 'pnpm'
-          check-latest: true
-
       - name: Install
         uses: actions-rs/toolchain@v1
         with:

@@ -70,13 +70,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: volta-cli/action@v4
-      - name: Setup node
-        uses: actions/setup-node@v4
-        if: ${{ !matrix.settings.docker }}
-        with:
-          node-version: 16
-          check-latest: true
-          cache: pnpm
       - name: Install
         uses: dtolnay/rust-toolchain@stable
         if: ${{ !matrix.settings.docker }}

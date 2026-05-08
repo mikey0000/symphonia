@@ -72,8 +72,13 @@
     "singleQuote": true,
     "arrowParens": "always"
   },
-  "packageManager": "pnpm@11.0.8",
+  "volta": {
+    "node": "24.11.0",
+    "pnpm": "11.0.8"
+  },
   "pnpm": {
-    "onlyBuiltDependencies": ["@swc/core"]
+    "onlyBuiltDependencies": [
+      "@swc/core"
+    ]
   }
 }
