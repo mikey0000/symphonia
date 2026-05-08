@@ -26,20 +26,30 @@ jobs:
           - host: macos-latest
             target: x86_64-apple-darwin
             build: |
-              yarn build
+              pnpm build
               strip -x *.node
           - host: windows-latest
-            build: yarn build
+            build: pnpm build
             target: x86_64-pc-windows-msvc
           - host: ubuntu-latest
             target: x86_64-unknown-linux-gnu
-            docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-debian
+            rustflags: '-C target-cpu=x86-64-v3'
+            build: |-
+              sudo snap install zig --beta --classic &&
+              sudo apt-get update &&
+              sudo apt-get install --no-install-recommends build-essential musl musl-tools libasound2-dev pkg-config -y &&
+              cargo install cargo-zigbuild --locked &&
+              set -e &&
+              cargo zigbuild --release --target x86_64-unknown-linux-gnu.2.35 &&
+              cp target/x86_64-unknown-linux-gnu/release/libsymphonia.so symphonia.linux-x64-gnu.node &&
+              strip symphonia.linux-x64-gnu.node
+          - host: ubuntu-latest
+            target: x86_64-unknown-linux-musl
+            rustflags: '-C target-cpu=x86-64-v3'
             build: |-
               sudo apt-get update &&
-              sudo apt-get install --no-install-recommends libasound2-dev pkg-config -y &&
-              set -e &&
-              yarn build --target x86_64-unknown-linux-gnu &&
-              strip *.node
+              sudo apt-get install --no-install-recommends build-essential musl musl-tools libasound2-dev pkg-config -y &&
+              ALSA_STATIC=1 PKG_CONFIG_ALLOW_CROSS=1 CC_x86_64_unknown_linux_musl=musl-gcc pnpm build --target x86_64-unknown-linux-musl
           - host: macos-latest
             target: aarch64-apple-darwin
             build: |
@@ -48,23 +58,27 @@ jobs:
               export CXX=$(xcrun -f clang++);
               SYSROOT=$(xcrun --sdk macosx --show-sdk-path);
               export CFLAGS="-isysroot $SYSROOT -isystem $SYSROOT";
-              yarn build --target aarch64-apple-darwin
+              pnpm build --target aarch64-apple-darwin
               strip -x *.node
           - host: windows-latest
             build: |
-              yarn build --target i686-pc-windows-msvc
+              pnpm build --target i686-pc-windows-msvc
             target: i686-pc-windows-msvc
     name: stable - ${{ matrix.settings.target }} - node@16
     runs-on: ${{ matrix.settings.host }}
     steps:
       - uses: actions/checkout@v3
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11
       - name: Setup node
         uses: actions/setup-node@v3
         if: ${{ !matrix.settings.docker }}
         with:
           node-version: 16
           check-latest: true
-          cache: yarn
+          cache: pnpm
       - name: Install
         uses: actions-rs/toolchain@v1
         if: ${{ !matrix.settings.docker }}
@@ -83,40 +97,29 @@ jobs:
             .cargo-cache
             target/
           key: ${{ matrix.settings.target }}-cargo-registry
-      - name: Cache NPM dependencies
-        uses: actions/cache@v3
-        with:
-          path: .yarn/cache
-          key: npm-cache-build-${{ matrix.settings.target }}-node@16
       - name: Setup toolchain
         run: ${{ matrix.settings.setup }}
         if: ${{ matrix.settings.setup }}
         shell: bash
       - name: Setup node x86
         if: matrix.settings.target == 'i686-pc-windows-msvc'
-        run: yarn config set supportedArchitectures.cpu "ia32"
+        run: pnpm config set supported-architectures.cpu "ia32"
         shell: bash
       - name: Install dependencies
-        run: yarn install
+        run: pnpm install
       - name: Setup node x86
         uses: actions/setup-node@v3
         if: matrix.settings.target == 'i686-pc-windows-msvc'
         with:
           node-version: 16
           check-latest: true
-          cache: yarn
+          cache: pnpm
           architecture: x86
-      - name: Build in docker
-        uses: addnab/docker-run-action@v3
-        if: ${{ matrix.settings.docker }}
-        with:
-          image: ${{ matrix.settings.docker }}
-          options: '--user 0:0 -v ${{ github.workspace }}/.cargo-cache/git/db:/usr/local/cargo/git/db -v ${{ github.workspace }}/.cargo/registry/cache:/usr/local/cargo/registry/cache -v ${{ github.workspace }}/.cargo/registry/index:/usr/local/cargo/registry/index -v ${{ github.workspace }}:/build -w /build'
-          run: ${{ matrix.settings.build }}
       - name: Build
         run: ${{ matrix.settings.build }}
-        if: ${{ !matrix.settings.docker }}
         shell: bash
+        env:
+          RUSTFLAGS: ${{ matrix.settings.rustflags || '' }}
       - name: Upload artifact
         uses: actions/upload-artifact@v3
         with:
@@ -130,27 +133,24 @@ jobs:
       - build
     steps:
       - uses: actions/checkout@v3
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11
       - name: Setup node
         uses: actions/setup-node@v3
         with:
           node-version: 16
           check-latest: true
-          cache: yarn
-      - name: Cache NPM dependencies
-        uses: actions/cache@v3
-        with:
-          path: .yarn/cache
-          key: npm-cache-ubuntu-latest-publish
-          restore-keys: |
-            npm-cache-
+          cache: pnpm
       - name: Install dependencies
-        run: yarn install
+        run: pnpm install
       - name: Download all artifacts
         uses: actions/download-artifact@v3
         with:
           path: artifacts
       - name: Move artifacts
-        run: yarn artifacts
+        run: pnpm artifacts
       - name: List packages
         run: ls -R ./npm
         shell: bash
